@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- 1. 引入vue -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.7.8"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <!-- 引入样式 -->
+  <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+  <!-- 引入组件库 -->
+  <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+</head>
+<body>
+<div id="app">
+  <el-container>
+    <el-header style="background: #409EFF; font-weight: bold; line-height: 60px; color: white">
+      monitor
+    </el-header>
+    <el-main style="margin-top: 10px">
+      <el-table
+              :data="tableData"
+              border
+              style="width: 100%"
+      >
+        <el-table-column
+                type="selection"
+                header-align="center"
+                align="center"
+                width="55">
+        </el-table-column>
+        <el-table-column
+                prop="tableSchema"
+                label="数据库名"
+                header-align="center"
+                align="center">
+        </el-table-column>
+        <el-table-column
+                prop="tableName"
+                label="表名"
+                header-align="center"
+                align="center">
+        </el-table-column>
+        <el-table-column
+                prop="tableComment"
+                label="表描述"
+                header-align="center"
+                align="center">
+        </el-table-column>
+        <el-table-column
+                prop="engine"
+                label="数据库引擎"
+                header-align="center"
+                align="center">
+        </el-table-column>
+        <el-table-column
+                prop="createTime"
+                label="创建时间"
+                header-align="center"
+                align="center">
+        </el-table-column>
+      </el-table>
+    </el-main>
+    <el-footer>
+    </el-footer>
+  </el-container>
+</div>
+</body>
+
+<script>
+  const app = new Vue({
+    el: '#app',
+    data: {
+      tableData: []
+    },
+    created() {
+      this.getTableInfos();
+    },
+    methods: {
+      getTableInfos() {
+        axios.get('/test/getAllInfo', "")
+                .then(({data}) => {
+                  if (data.code !== 200) {
+                    return this.$message.error(data.msg);
+                  }
+                  this.tableData = data.result.records;
+                  this.total = data.result.total;
+                })
+                .catch(error => console.log("查询数据表错误", error));
+      }
+    }
+  })
+</script>
+</html>
