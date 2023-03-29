@@ -25,38 +25,38 @@
               style="width: 100%"
       >
         <el-table-column
-                type="selection"
-                header-align="center"
-                align="center"
-                width="55">
-        </el-table-column>
-        <el-table-column
-                prop="tableSchema"
-                label="数据库名"
+                label="主机"
+                prop="host"
                 header-align="center"
                 align="center">
         </el-table-column>
         <el-table-column
-                prop="tableName"
-                label="表名"
+                label="cpu使用率"
                 header-align="center"
                 align="center">
+          <template slot-scope="scope">
+            <el-progress :percentage=" scope.row.cpu "></el-progress>
+          </template>
         </el-table-column>
         <el-table-column
-                prop="tableComment"
-                label="表描述"
+                label="内存使用率"
                 header-align="center"
                 align="center">
+          <template slot-scope="scope">
+            <el-progress :percentage=" scope.row.memory "></el-progress>
+          </template>
         </el-table-column>
         <el-table-column
-                prop="engine"
-                label="数据库引擎"
+                label="磁盘使用率"
                 header-align="center"
                 align="center">
+          <template slot-scope="scope">
+            <el-progress :percentage=" scope.row.disk "></el-progress>
+          </template>
         </el-table-column>
         <el-table-column
-                prop="createTime"
-                label="创建时间"
+                label="requestCount"
+                prop="请求次数"
                 header-align="center"
                 align="center">
         </el-table-column>
@@ -81,11 +81,16 @@
       getTableInfos() {
         axios.get('/test/getAllInfo', "")
                 .then(({data}) => {
-                  if (data.code !== 200) {
+                  if (data == null) {
                     return this.$message.error(data.msg);
                   }
-                  this.tableData = data.result.records;
-                  this.total = data.result.total;
+                  this.tableData = data;
+                  this.tableData.forEach(item => {
+                    item.cpu = parseFloat(item.cpu).toFixed(1)
+                    item.disk = parseFloat(item.disk).toFixed(1)
+                    item.memory = parseFloat(item.memory).toFixed(1)
+                    console.log(item)
+                  })
                 })
                 .catch(error => console.log("查询数据表错误", error));
       }
