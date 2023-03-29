@@ -1,6 +1,7 @@
 package com.example.demo.utils;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,10 +23,13 @@ import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContextBuilder;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.StringHttpMessageConverter;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.RestTemplate;
 
@@ -67,31 +71,36 @@ public class RestTemplateUtils {
      *
      * @param url           地址
      * @param params        参数
-     * @param connecTimeout 连接时间
+     * @param connectTimeout 连接时间
      * @param readTimeout   读取时间
      * @param retryCount    重试机制
      * @return String 类型
      */
-    public static JSONObject getHttp(String url, Map<String,String> params, int connecTimeout, int readTimeout, int retryCount) {
+    public static JSONObject getHttp(String url, Map<String,String> params, int connectTimeout, int readTimeout, int retryCount) {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(connecTimeout);
+        requestFactory.setConnectTimeout(connectTimeout);
         requestFactory.setReadTimeout(readTimeout);
         RestTemplate restTemplate = new RestTemplate(requestFactory);
         restTemplate.getMessageConverters().set(1, new StringHttpMessageConverter(StandardCharsets.UTF_8)); // 设置编码集
         restTemplate.setErrorHandler(new DefaultResponseErrorHandler()); // 异常处理
-        JSONObject result = null; // 返回值类型;
+        ResponseEntity<JSONObject> result = null; // 返回值类型;
         for (int i = 1; i <= retryCount; i++) {
             try {
                 log.info("【GET/HTTP请求信息】,请求地址:{},请求参数:{}", url, params);
-                result = restTemplate.getForObject(url, JSONObject.class, params);
+                if(CollectionUtils.isEmpty(params)){
+                    URI uri = URI.create(url);
+                    result = restTemplate.getForEntity(uri, JSONObject.class);
+                }else{
+                    result = restTemplate.getForEntity(url, JSONObject.class, params);
+                }
                 log.info("【GET/HTTP请求信息】,请求地址:{},请求参数:{},返回结果:{}", url, params,result);
-                return result;
+                return result.getBody();
             } catch (Exception e) {
                 log.error("【GET/HTTP请求信息】异常,重试count:{}，请求地址:{},请求参数:{},异常信息:{}", i, url, params,e);
                 e.printStackTrace();
             }
         }
-        return result;
+        return result.getBody();
     }
 
     /**

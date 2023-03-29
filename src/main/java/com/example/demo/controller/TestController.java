@@ -21,6 +21,11 @@ public class TestController {
         return PromUtils.getDateInfo("http://124.223.7.184:9090",PromConstant.PROCESS_DISK_COUNT);
     }
 
+    @GetMapping("/get111")
+    public PromDataInfo get111() {
+        return PromUtils.getDiskInfo("http://124.223.7.184:9090");
+    }
+
     @GetMapping("/getRange")
     public PromDataInfo getRange() {
         return PromUtils.getRangeDateInfo("http://124.223.7.184:9090",PromConstant.PROCESS_CPU_COUNT,1);

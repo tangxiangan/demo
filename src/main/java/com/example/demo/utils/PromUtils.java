@@ -23,13 +23,19 @@ import java.util.*;
 @Slf4j
 @Component
 public class PromUtils {
-    public static PromDataInfo getDateInfo(String promURL, String promQL ) {
+    public static PromDataInfo getDateInfo(String promURL, String type ) {
         promURL = promURL + PromConstant.QUERY ;
-        log.info("请求地址：{}，请求QL：{}", promURL, promQL);
+        log.info("请求地址：{}，请求QL：{}", promURL, type);
         Map<String,String> param = new HashMap<>();
-        param.put(PromConstant.QUERY_PARAM, promQL);
+        param.put(PromConstant.QUERY_PARAM, type);
         param.put(PromConstant.TIME, String.valueOf(System.currentTimeMillis()/1000));
-        return sendRequest(promURL, promQL, param);
+        return sendRequest(promURL, type, param);
+    }
+
+    public static PromDataInfo getDiskInfo(String promURL) {
+        promURL = promURL + PromConstant.QUERY_URL + "?query=" +PromConstant.PROCESS_DISK_COUNT_URL + "&time=" + String.valueOf(System.currentTimeMillis()/1000);
+        log.info("请求地址：{}，请求QL：{}", promURL);
+        return sendRequest(promURL, null, null);
     }
 
     private static void handleEncodeQuery(String promQL, JSONObject param) {
@@ -41,15 +47,15 @@ public class PromUtils {
     }
 
     @Nullable
-    private static PromDataInfo sendRequest(String promURL, String promQL, Map<String,String> param) {
+    private static PromDataInfo sendRequest(String promURL, String type, Map<String,String> param) {
         JSONObject http = null;
         try {
             http = RestTemplateUtils.getHttp(promURL, param);
         } catch (Exception e) {
-            log.error("请求地址：{}，请求QL：{}，异常信息：{}", promURL, promQL, e);
+            log.error("请求地址：{}，请求QL：{}，异常信息：{}", promURL, type, e);
         }
         PromCommonResponse responceInfo = http.toJavaObject(PromCommonResponse.class);
-        log.info("请求地址：{}，请求QL：{}，返回信息：{}", promURL, promQL, responceInfo);
+        log.info("请求地址：{}，请求QL：{}，返回信息：{}", promURL, type, responceInfo);
         if (Objects.isNull(responceInfo)) {
             return null;
         }
@@ -83,7 +89,7 @@ public class PromUtils {
 
     public static List<MonitorDataVO> getAllInfo() {
         PromDataInfo cpuInfo =  PromUtils.getDateInfo("http://124.223.7.184:9090",PromConstant.PROCESS_CPU_COUNT);
-        PromDataInfo diskInfo = PromUtils.getDateInfo("http://124.223.7.184:9090",PromConstant.PROCESS_DISK_COUNT);
+        PromDataInfo diskInfo = PromUtils.getDiskInfo("http://124.223.7.184:9090");
         PromDataInfo memoryInfo = PromUtils.getDateInfo("http://124.223.7.184:9090",PromConstant.PROCESS_MEMORY_COUNT);
         Map<String, MonitorDataVO> hostMap = new HashMap<>();
         MonitorDataVO monitorDataVO;
@@ -97,16 +103,16 @@ public class PromUtils {
             }
             monitorDataVO.setCpu(promMetric.getValue()[1]);
         }
-//        for (PromMetric promMetric : diskInfo.getResult()) {
-//            if (!hostMap.containsKey(promMetric.getMetric().getInstance())) {
-//                monitorDataVO = new MonitorDataVO();
-//                monitorDataVO.setHost(promMetric.getMetric().getInstance());
-//                hostMap.put(promMetric.getMetric().getInstance(),monitorDataVO);
-//            } else {
-//                monitorDataVO = hostMap.get(promMetric.getMetric().getInstance());
-//            }
-//            monitorDataVO.setDisk(promMetric.getValue()[1]);
-//        }
+        for (PromMetric promMetric : diskInfo.getResult()) {
+            if (!hostMap.containsKey(promMetric.getMetric().getInstance())) {
+                monitorDataVO = new MonitorDataVO();
+                monitorDataVO.setHost(promMetric.getMetric().getInstance());
+                hostMap.put(promMetric.getMetric().getInstance(),monitorDataVO);
+            } else {
+                monitorDataVO = hostMap.get(promMetric.getMetric().getInstance());
+            }
+            monitorDataVO.setDisk(promMetric.getValue()[1]);
+        }
         for (PromMetric promMetric : memoryInfo.getResult()) {
             if (!hostMap.containsKey(promMetric.getMetric().getInstance())) {
                 monitorDataVO = new MonitorDataVO();
@@ -117,7 +123,7 @@ public class PromUtils {
             }
             monitorDataVO.setMemory(promMetric.getValue()[1]);
         }
-        return new ArrayList(hostMap.values());
+        return new ArrayList<>(hostMap.values());
     }
 
 
